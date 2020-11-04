@@ -5,41 +5,28 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/route53"
 )
 
 func main() {
-	// sess, err := session.NewSession()
-	// sess, err := session.NewSession(&aws.Config{
-	// 	Region: aws.String(os.Getenv("AWS_REGION"))},
-	// )
-	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	sess := session.Must(session.NewSession())
+	svc := route53.New(sess)
 
-	// client instance
-	// svc := s3.New(sess)
-	// log calls
-	// svc := dynamodb.New(sess, aws.NewConfig().WithLogLevel(aws.LogDebugWithHTTPBody))
-
-	svc := s3.New(sess)
-	input := &s3.ListBucketsInput{}
-	result, err := svc.ListBuckets(input)
+	input := &route53.GetHostedZoneInput{}
+	result, err := svc.GetHostedZone(input)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
+			case route53.ErrCodeNoSuchHostedZone:
+				fmt.Println(route53.ErrCodeNoSuchHostedZone, aerr.Error())
+			case route53.ErrCodeInvalidInput:
+				fmt.Println(route53.ErrCodeInvalidInput, aerr.Error())
 			default:
 				fmt.Println(aerr.Error())
 			}
 		} else {
-			// Print the error, cast err to awserr.Error to get the Code and
-			// Message from an error.
 			fmt.Println(err.Error())
 		}
 		return
 	}
-	fmt.Println(result)
 }
