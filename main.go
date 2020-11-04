@@ -8,16 +8,16 @@ import (
 	"github.com/aws/aws-sdk-go/service/route53"
 )
 
-func main() {
-	sess := session.Must(session.NewSession())
-	svc := route53.New(sess)
+var S *session.Session
 
-	input := &route53.ListHostedZonesInput{}
-	result, err := svc.ListHostedZones(input)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(result)
+func init() {
+	S = session.Must(session.NewSession())
+}
+
+func main() {
+	r := route53.New(S)
+
+	getPublicZones(r)
 
 	// input := &route53.GetHostedZoneInput{}
 	// result, err := svc.GetHostedZone(input)
@@ -37,4 +37,13 @@ func main() {
 	// 	return
 	// }
 	// fmt.Printf("%+v", result)
+}
+
+func getPublicZones(r *route53.Route53) {
+	input := &route53.ListHostedZonesInput{}
+	res, err := r.ListHostedZones(input)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(*res.IsTruncated)
 }
