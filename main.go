@@ -29,4 +29,5 @@ func main() {
 		}
 		return
 	}
+	fmt.Printf("%+v", result)
 }
