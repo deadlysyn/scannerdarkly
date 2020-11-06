@@ -3,21 +3,27 @@ package main
 import (
 	"fmt"
 	"log"
+	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/route53"
 )
 
-var S *session.Session
+var s *session.Session
 
 func init() {
-	S = session.Must(session.NewSession())
+	s = session.Must(session.NewSession())
 }
 
 func main() {
-	r := route53.New(S)
+	r := route53.New(s)
 
-	getPublicZones(r)
+	ids, err := getPublicZoneIds(r)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(ids)
 
 	// input := &route53.GetHostedZoneInput{}
 	// result, err := svc.GetHostedZone(input)
@@ -39,11 +45,27 @@ func main() {
 	// fmt.Printf("%+v", result)
 }
 
-func getPublicZones(r *route53.Route53) {
+func getPublicZoneIds(r *route53.Route53) ([]string, error) {
+	var zones []string
 	input := &route53.ListHostedZonesInput{}
-	res, err := r.ListHostedZones(input)
-	if err != nil {
-		log.Fatal(err)
+
+	for {
+		res, err := r.ListHostedZones(input)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, v := range res.HostedZones {
+			id := strings.Split(*v.Id, "/")[2]
+			zones = append(zones, id)
+		}
+
+		if *res.IsTruncated {
+			input = &route53.ListHostedZonesInput{
+				Marker: aws.String(*res.NextMarker),
+			}
+		} else {
+			return zones, nil
+		}
 	}
-	fmt.Println(*res.IsTruncated)
 }
