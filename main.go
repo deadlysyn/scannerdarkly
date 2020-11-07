@@ -10,13 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/route53"
 )
 
-var s *session.Session
-
-func init() {
-	s = session.Must(session.NewSession())
-}
-
 func main() {
+	s := session.Must(session.NewSession())
 	r := route53.New(s)
 
 	ids, err := getPublicZoneIds(r)
