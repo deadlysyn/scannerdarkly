@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/route53"
 )
@@ -23,26 +24,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(ids)
 
-	// input := &route53.GetHostedZoneInput{}
-	// result, err := svc.GetHostedZone(input)
-	// if err != nil {
-	// 	if aerr, ok := err.(awserr.Error); ok {
-	// 		switch aerr.Code() {
-	// 		case route53.ErrCodeNoSuchHostedZone:
-	// 			fmt.Println(route53.ErrCodeNoSuchHostedZone, aerr.Error())
-	// 		case route53.ErrCodeInvalidInput:
-	// 			fmt.Println(route53.ErrCodeInvalidInput, aerr.Error())
-	// 		default:
-	// 			fmt.Println(aerr.Error())
-	// 		}
-	// 	} else {
-	// 		fmt.Println(err.Error())
-	// 	}
-	// 	return
-	// }
-	// fmt.Printf("%+v", result)
+	for _, v := range ids {
+		getHostedZoneData(r, v)
+	}
 }
 
 func getPublicZoneIds(r *route53.Route53) ([]string, error) {
@@ -56,8 +41,10 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 		}
 
 		for _, v := range res.HostedZones {
-			id := strings.Split(*v.Id, "/")[2]
-			zones = append(zones, id)
+			if !*v.Config.PrivateZone {
+				id := strings.Split(*v.Id, "/")[2]
+				zones = append(zones, id)
+			}
 		}
 
 		if *res.IsTruncated {
@@ -68,4 +55,25 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 			return zones, nil
 		}
 	}
+}
+
+func getHostedZoneData(r *route53.Route53, id string) {
+	input := &route53.GetHostedZoneInput{Id: aws.String(id)}
+	result, err := r.GetHostedZone(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case route53.ErrCodeNoSuchHostedZone:
+				fmt.Println(route53.ErrCodeNoSuchHostedZone, aerr.Error())
+			case route53.ErrCodeInvalidInput:
+				fmt.Println(route53.ErrCodeInvalidInput, aerr.Error())
+			default:
+				fmt.Println(aerr.Error())
+			}
+		} else {
+			fmt.Println(err.Error())
+		}
+		return
+	}
+	fmt.Printf("%+v", result)
 }
