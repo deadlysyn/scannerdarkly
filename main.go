@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/route53"
 )
@@ -58,22 +57,13 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 }
 
 func getHostedZoneData(r *route53.Route53, id string) {
-	input := &route53.GetHostedZoneInput{Id: aws.String(id)}
-	result, err := r.GetHostedZone(input)
+	input := &route53.ListResourceRecordSetsInput{HostedZoneId: aws.String(id)}
+	res, err := r.ListResourceRecordSets(input)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case route53.ErrCodeNoSuchHostedZone:
-				fmt.Println(route53.ErrCodeNoSuchHostedZone, aerr.Error())
-			case route53.ErrCodeInvalidInput:
-				fmt.Println(route53.ErrCodeInvalidInput, aerr.Error())
-			default:
-				fmt.Println(aerr.Error())
-			}
-		} else {
-			fmt.Println(err.Error())
-		}
-		return
+		log.Fatal(err)
 	}
-	fmt.Printf("%+v", result)
+	// fmt.Printf("%+v", res)
+	for _, v := range res.ResourceRecordSets {
+		fmt.Printf("%v,%v,%v\n", *v.Name, *v.Type, v.ResourceRecords)
+	}
 }
