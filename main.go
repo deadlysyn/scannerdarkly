@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
@@ -14,6 +13,8 @@ type dnsRecord struct {
 	Type   string
 	Values []string
 }
+
+var records map[string]dnsRecord
 
 func main() {
 	s := session.Must(session.NewSession())
@@ -40,15 +41,15 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 		}
 
 		for _, v := range res.HostedZones {
-			i := *v.Id
+			id := *v.Id
 			// only audit public zones
 			if !*v.Config.PrivateZone {
-				// assume zone IDs start with "Z"
-				if !strings.HasPrefix(i, "Z") {
-					log.Printf("Skipping malformed zone ID: %v", i)
+				id = strings.Split(id, "/")[2]
+				// assume zone IDs should start with "Z"
+				if !strings.HasPrefix(id, "Z") {
+					log.Printf("Skipping malformed zone ID: %v", id)
 					continue
 				}
-				id := strings.Split(i, "/")[2]
 				zones = append(zones, id)
 			}
 		}
@@ -63,16 +64,25 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 	}
 }
 
-func getHostedZoneData(r *route53.Route53, id string) map[string]dnsRecord {
-	var result map[string]dnsRecord
-
+func getHostedZoneData(r *route53.Route53, id string) error {
 	input := &route53.ListResourceRecordSetsInput{HostedZoneId: aws.String(id)}
 	res, err := r.ListResourceRecordSets(input)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
 	// fmt.Printf("%+v", res)
-	for _, v := range res.ResourceRecordSets {
-		fmt.Printf("%v,%v,%v\n", *v.Name, *v.Type, v.ResourceRecords)
+	for _, s := range res.ResourceRecordSets {
+		// fmt.Printf("%v,%v,%v\n", *v.Name, *v.Type, v.ResourceRecords)
+		records[*s.Name] = dnsRecord{
+			Type: *s.Type,
+		}
+		for _, r := range s.ResourceRecords {
+			records[*s.Name] = dnsRecord{
+				Values: append(records[*s.Name].Values, *r.Value),
+			}
+		}
 	}
+
+	return nil
 }
