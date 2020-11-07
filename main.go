@@ -10,6 +10,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/route53"
 )
 
+type dnsRecord struct {
+	Type   string
+	Values []string
+}
+
 func main() {
 	s := session.Must(session.NewSession())
 	r := route53.New(s)
@@ -35,8 +40,15 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 		}
 
 		for _, v := range res.HostedZones {
+			i := *v.Id
+			// only audit public zones
 			if !*v.Config.PrivateZone {
-				id := strings.Split(*v.Id, "/")[2]
+				// assume zone IDs start with "Z"
+				if !strings.HasPrefix(i, "Z") {
+					log.Printf("Skipping malformed zone ID: %v", i)
+					continue
+				}
+				id := strings.Split(i, "/")[2]
 				zones = append(zones, id)
 			}
 		}
@@ -51,7 +63,9 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 	}
 }
 
-func getHostedZoneData(r *route53.Route53, id string) {
+func getHostedZoneData(r *route53.Route53, id string) map[string]dnsRecord {
+	var result map[string]dnsRecord
+
 	input := &route53.ListResourceRecordSetsInput{HostedZoneId: aws.String(id)}
 	res, err := r.ListResourceRecordSets(input)
 	if err != nil {
