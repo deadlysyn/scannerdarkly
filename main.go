@@ -25,8 +25,9 @@ func main() {
 		log.Fatal(err)
 	}
 
+	db := make(map[string]dnsRecord)
 	for _, v := range ids {
-		getHostedZoneData(r, v)
+		getHostedZoneData(r, v, &db)
 	}
 }
 
@@ -64,7 +65,7 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 	}
 }
 
-func getHostedZoneData(r *route53.Route53, id string) error {
+func getHostedZoneData(r *route53.Route53, id string, db *records) error {
 	input := &route53.ListResourceRecordSetsInput{HostedZoneId: aws.String(id)}
 	res, err := r.ListResourceRecordSets(input)
 	if err != nil {
