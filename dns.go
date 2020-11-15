@@ -45,12 +45,11 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 	}
 }
 
-// need to handle truncation...
 func getResourceRecords(r *route53.Route53, id string) {
 	var recs []dnsRecord
 	input := &route53.ListResourceRecordSetsInput{
 		HostedZoneId: aws.String(id),
-		MaxItems: aws.String("100"),
+		MaxItems:     aws.String("100"),
 	}
 
 	for {
@@ -60,23 +59,28 @@ func getResourceRecords(r *route53.Route53, id string) {
 		}
 
 		for _, s := range res.ResourceRecordSets {
-			rec := dnsRecord{
-				Name: *s.Name,
-				Type: *s.Type,
-			}
-			if s.AliasTarget != nil {
-				rec.Values = append(rec.Values, *s.AliasTarget.DNSName)
-			} else {
-				for _, r := range s.ResourceRecords {
-					if !strings.HasSuffix(*r.Value, "acm-validations.aws.") {
-						rec.Values = append(rec.Values, *r.Value)
-					} else {
-						fmt.Printf("Skipping %v (ACM)\n", *s.Name)
+			switch *s.Type {
+			case "A", "AAAA", "CNAME":
+				rec := dnsRecord{
+					Name: *s.Name,
+					Type: *s.Type,
+				}
+				if s.AliasTarget != nil {
+					rec.Values = append(rec.Values, *s.AliasTarget.DNSName)
+				} else {
+					for _, r := range s.ResourceRecords {
+						if !strings.HasSuffix(*r.Value, "acm-validations.aws.") {
+							rec.Values = append(rec.Values, *r.Value)
+						} else {
+							fmt.Printf("Skipping %v (ACM)\n", *s.Name)
+						}
 					}
 				}
-			}
-			if len(rec.Values) > 0 {
-				recs = append(recs, rec)
+				if len(rec.Values) > 0 {
+					recs = append(recs, rec)
+				}
+			default:
+				fmt.Printf("Skipping %v (%v)\n", *s.Name, *s.Type)
 			}
 		}
 		DB[id] = recs
