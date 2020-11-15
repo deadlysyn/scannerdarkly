@@ -17,27 +17,29 @@ func report() {
 		"Values",
 	})
 
-	for k, v := range DB {
-		switch v.Type {
-		case "A", "AAAA", "CNAME":
-			w.Write([]string{
-				k,
-				v.ID,
-				v.Type,
-				v.Values[0],
-			})
-			if len(v.Values) > 1 {
-				for i := 1; i < len(v.Values); i++ {
-					w.Write([]string{
-						"",
-						"",
-						"",
-						v.Values[i],
-					})
+	for id, recs := range DB {
+		for _, rec := range recs {
+			switch rec.Type {
+			case "A", "AAAA", "CNAME":
+				w.Write([]string{
+					rec.Name,
+					id,
+					rec.Type,
+					rec.Values[0],
+				})
+				if len(rec.Values) > 1 {
+					for i := 1; i < len(rec.Values); i++ {
+						w.Write([]string{
+							"",
+							"",
+							"",
+							rec.Values[i],
+						})
+					}
 				}
+			default:
+				fmt.Printf("Skipping %v (%v)\n", rec.Name, rec.Type)
 			}
-		default:
-			fmt.Printf("Skipping %v (%v)\n", k, v.Type)
 		}
 	}
 }
