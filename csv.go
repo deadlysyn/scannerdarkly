@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func report() {
+func reportCSV() {
 	w := csv.NewWriter(os.Stdout)
 	defer w.Flush()
 
