@@ -11,7 +11,9 @@ import (
 
 func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 	var ids []string
-	input := &route53.ListHostedZonesInput{}
+	input := &route53.ListHostedZonesInput{
+		MaxItems: aws.String("100"),
+	}
 
 	for {
 		res, err := r.ListHostedZones(input)
@@ -45,33 +47,47 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 
 // need to handle truncation...
 func getResourceRecords(r *route53.Route53, id string) {
-	input := &route53.ListResourceRecordSetsInput{HostedZoneId: aws.String(id)}
-	res, err := r.ListResourceRecordSets(input)
-	if err != nil {
-		log.Fatal(err)
+	var recs []dnsRecord
+	input := &route53.ListResourceRecordSetsInput{
+		HostedZoneId: aws.String(id),
+		MaxItems: aws.String("100"),
 	}
 
-	recs := make([]dnsRecord, 0)
-
-	for _, s := range res.ResourceRecordSets {
-		rec := dnsRecord{
-			Name: *s.Name,
-			Type: *s.Type,
+	for {
+		res, err := r.ListResourceRecordSets(input)
+		if err != nil {
+			log.Fatal(err)
 		}
-		if s.AliasTarget != nil {
-			rec.Values = append(rec.Values, *s.AliasTarget.DNSName)
-		} else {
-			for _, r := range s.ResourceRecords {
-				if !strings.HasSuffix(*r.Value, "acm-validations.aws.") {
-					rec.Values = append(rec.Values, *r.Value)
-				} else {
-					fmt.Printf("Skipping %v (ACM)\n", *s.Name)
+
+		for _, s := range res.ResourceRecordSets {
+			rec := dnsRecord{
+				Name: *s.Name,
+				Type: *s.Type,
+			}
+			if s.AliasTarget != nil {
+				rec.Values = append(rec.Values, *s.AliasTarget.DNSName)
+			} else {
+				for _, r := range s.ResourceRecords {
+					if !strings.HasSuffix(*r.Value, "acm-validations.aws.") {
+						rec.Values = append(rec.Values, *r.Value)
+					} else {
+						fmt.Printf("Skipping %v (ACM)\n", *s.Name)
+					}
 				}
 			}
+			if len(rec.Values) > 0 {
+				recs = append(recs, rec)
+			}
 		}
-		if len(rec.Values) > 0 {
-			recs = append(recs, rec)
+		DB[id] = recs
+
+		if *res.IsTruncated {
+			input = &route53.ListResourceRecordSetsInput{
+				StartRecordName: res.NextRecordName,
+				StartRecordType: res.NextRecordType,
+			}
+		} else {
+			break
 		}
 	}
-	DB[id] = recs
 }
