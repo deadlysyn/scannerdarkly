@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -10,11 +11,13 @@ import (
 )
 
 type dnsRecord struct {
+	ID     string
 	Type   string
 	Values []string
 }
 
-var records map[string]dnsRecord
+// DB maps DNS names to resource record values.
+var DB = make(map[string]dnsRecord)
 
 func main() {
 	s := session.Must(session.NewSession())
@@ -25,14 +28,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db := make(map[string]dnsRecord)
 	for _, v := range ids {
-		getHostedZoneData(r, v, &db)
+		fmt.Printf("Zone ID: %+v\n", v)
+		getResourceRecords(r, v)
 	}
+
+	// fmt.Printf("%+v", DB)
 }
 
 func getPublicZoneIds(r *route53.Route53) ([]string, error) {
-	var zones []string
+	var ids []string
 	input := &route53.ListHostedZonesInput{}
 
 	for {
@@ -51,7 +56,7 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 					log.Printf("Skipping malformed zone ID: %v", id)
 					continue
 				}
-				zones = append(zones, id)
+				ids = append(ids, id)
 			}
 		}
 
@@ -60,30 +65,33 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 				Marker: aws.String(*res.NextMarker),
 			}
 		} else {
-			return zones, nil
+			return ids, nil
 		}
 	}
 }
 
-func getHostedZoneData(r *route53.Route53, id string, db *records) error {
+func getResourceRecords(r *route53.Route53, id string) {
 	input := &route53.ListResourceRecordSetsInput{HostedZoneId: aws.String(id)}
 	res, err := r.ListResourceRecordSets(input)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
-	// fmt.Printf("%+v", res)
 	for _, s := range res.ResourceRecordSets {
-		// fmt.Printf("%v,%v,%v\n", *v.Name, *v.Type, v.ResourceRecords)
-		records[*s.Name] = dnsRecord{
-			Type: *s.Type,
+		rec := dnsRecord{
+			ID: id,
+		}
+		fmt.Printf("\tTYPE: %+v\n", *s.Type)
+		rec.Type = *s.Type
+		if s.AliasTarget != nil {
+			fmt.Printf("\t\tVALUE: %+v\n", *s.AliasTarget.DNSName)
+			rec.Values = append(rec.Values, *s.AliasTarget.DNSName)
+			continue
 		}
 		for _, r := range s.ResourceRecords {
-			records[*s.Name] = dnsRecord{
-				Values: append(records[*s.Name].Values, *r.Value),
-			}
+			fmt.Printf("\t\tVALUE: %+v\n", *r.Value)
+			rec.Values = append(rec.Values, *r.Value)
 		}
+		DB[*s.Name] = rec
 	}
-
-	return nil
 }
