@@ -52,7 +52,10 @@ func getResourceRecords(r *route53.Route53, id string) {
 		MaxItems:     aws.String("100"),
 	}
 
+	fmt.Printf("Processing zone %v\n", id)
+
 	for {
+
 		res, err := r.ListResourceRecordSets(input)
 		if err != nil {
 			log.Fatal(err)
@@ -66,6 +69,7 @@ func getResourceRecords(r *route53.Route53, id string) {
 					Type: *s.Type,
 				}
 				if s.AliasTarget != nil {
+					rec.Alias = true
 					rec.Values = append(rec.Values, *s.AliasTarget.DNSName)
 				} else {
 					for _, r := range s.ResourceRecords {
