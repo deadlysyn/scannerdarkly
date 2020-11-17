@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net"
+	"os"
 )
 
 func scan() {
@@ -22,7 +23,7 @@ func scanTCP(rec *dnsRecord) {
 			} else {
 				host = fmt.Sprintf("%v:%v", v, p)
 			}
-			fmt.Printf("Scanning %v...\n", host)
+			fmt.Fprintf(os.Stderr, "Scanning %v...\n", host)
 			conn, err := net.DialTimeout("tcp", host, TIMEOUT)
 			if err != nil {
 				continue

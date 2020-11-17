@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -52,7 +53,7 @@ func getResourceRecords(r *route53.Route53, id string) {
 		MaxItems:     aws.String("100"),
 	}
 
-	fmt.Printf("Processing zone %v\n", id)
+	fmt.Fprintf(os.Stderr, "Processing zone %v\n", id)
 
 	for {
 
@@ -76,7 +77,7 @@ func getResourceRecords(r *route53.Route53, id string) {
 						if !strings.HasSuffix(*r.Value, "acm-validations.aws.") {
 							rec.Values = append(rec.Values, *r.Value)
 						} else {
-							fmt.Printf("Skipping %v (ACM)\n", *s.Name)
+							fmt.Fprintf(os.Stderr, "Skipping %v (ACM)\n", *s.Name)
 						}
 					}
 				}
@@ -84,7 +85,7 @@ func getResourceRecords(r *route53.Route53, id string) {
 					recs = append(recs, rec)
 				}
 			default:
-				fmt.Printf("Skipping %v (%v)\n", *s.Name, *s.Type)
+				fmt.Fprintf(os.Stderr, "Skipping %v (%v)\n", *s.Name, *s.Type)
 			}
 		}
 		DB[id] = recs
