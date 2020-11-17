@@ -23,12 +23,14 @@ func scanTCP(rec *dnsRecord) {
 			} else {
 				host = fmt.Sprintf("%v:%v", v, p)
 			}
-			fmt.Fprintf(os.Stderr, "Scanning %v...\n", host)
+			fmt.Fprintf(os.Stderr, "Scanning %v...", host)
 			conn, err := net.DialTimeout("tcp", host, TIMEOUT)
 			if err != nil {
+				fmt.Fprintln(os.Stderr, " closed.")
 				continue
 			}
 			defer conn.Close()
+			fmt.Fprintln(os.Stderr, " open.")
 			rec.Active = append(rec.Active, host)
 		}
 	}
