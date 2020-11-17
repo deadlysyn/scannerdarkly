@@ -6,17 +6,22 @@ import (
 )
 
 func scan() {
-	for _, recs := range DB {
-		for _, rec := range recs {
-			scanTCP(rec)
+	for id, recs := range DB {
+		for idx := range recs {
+			scanTCP(&DB[id][idx])
 		}
 	}
 }
 
-func scanTCP(rec dnsRecord) {
+func scanTCP(rec *dnsRecord) {
 	for _, v := range rec.Values {
 		for _, p := range PORTS {
-			host := fmt.Sprintf("%v:%v", v, p)
+			var host string
+			if rec.Type == "AAAA" && !rec.Alias {
+				host = fmt.Sprintf("[%v]:%v", v, p)
+			} else {
+				host = fmt.Sprintf("%v:%v", v, p)
+			}
 			fmt.Printf("Scanning %v...\n", host)
 			conn, err := net.DialTimeout("tcp", host, TIMEOUT)
 			if err != nil {
