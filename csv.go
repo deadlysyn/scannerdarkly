@@ -9,20 +9,28 @@ func reportCSV() {
 	w := csv.NewWriter(os.Stdout)
 	defer w.Flush()
 
+	// header
 	w.Write([]string{
-		"Name",
 		"Zone ID",
+		"Name",
 		"Type",
-		"Values",
+		"Results",
 	})
 
 	for id, recs := range DB {
 		for _, rec := range recs {
+			if len(rec.Active) == 0 {
+				rec.Active = append(rec.Active, "No open ports found")
+			}
+			t := rec.Type
+			if rec.Alias {
+				t = "Alias"
+			}
 			w.Write([]string{
-				rec.Name,
 				id,
-				rec.Type,
-				rec.Values[0],
+				rec.Name,
+				t,
+				rec.Active[0],
 			})
 			if len(rec.Values) > 1 {
 				for i := 1; i < len(rec.Values); i++ {
@@ -30,7 +38,7 @@ func reportCSV() {
 						"",
 						"",
 						"",
-						rec.Values[i],
+						rec.Active[i],
 					})
 				}
 			}
