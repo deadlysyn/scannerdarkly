@@ -14,6 +14,7 @@ import (
 type dnsRecord struct {
 	Name   string
 	Type   string
+	Alias  bool
 	Values []string
 	Active []string
 }
