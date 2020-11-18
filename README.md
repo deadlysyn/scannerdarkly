@@ -33,8 +33,6 @@ Skipping foo.domain.dev. (NS)
 Skipping foo.domain.dev. (SOA)
 Skipping _XXX.foo.domain.dev. (ACM)
 Scanning bar.region.elb.amazonaws.com.:80... open.
-Zone ID,Name,Type,Results
-ZXXX...,foo.domain.dev.,Alias,bar.region.elb.amazonaws.com.:80
 
 $ cat report.csv
 Zone ID,Name,Type,Results
