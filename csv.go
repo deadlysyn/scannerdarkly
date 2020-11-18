@@ -32,8 +32,8 @@ func reportCSV() {
 				t,
 				rec.Active[0],
 			})
-			if len(rec.Values) > 1 {
-				for i := 1; i < len(rec.Values); i++ {
+			if len(rec.Active) > 1 {
+				for i := 1; i < len(rec.Active); i++ {
 					w.Write([]string{
 						"",
 						"",
