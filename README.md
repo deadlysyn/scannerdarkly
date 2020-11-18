@@ -29,14 +29,14 @@ All configuration can be specified via environment:
 ```console
 $ PORTS=80 ZONES=ZXXX... aws-vault exec dev -- go run . > report.csv
 Processing zone ZXXX...
-Skipping foo.domain.dev. (NS)
-Skipping foo.domain.dev. (SOA)
-Skipping _XXX.foo.domain.dev. (ACM)
-Scanning bar.region.elb.amazonaws.com.:80... open.
+Skipping foo.domain.dev (NS)
+Skipping foo.domain.dev (SOA)
+Skipping _XXX.foo.domain.dev (ACM)
+Scanning bar.region.elb.amazonaws.com:80... open.
 
 $ cat report.csv
 Zone ID,Name,Type,Results
-ZXXX...,foo.domain.dev.,Alias,bar.region.elb.amazonaws.com.:80
+ZXXX...,foo.domain.dev,Alias,bar.region.elb.amazonaws.com:80
 ...
 ```
 
