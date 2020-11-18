@@ -66,18 +66,18 @@ func getResourceRecords(r *route53.Route53, id string) {
 			switch *s.Type {
 			case "A", "AAAA", "CNAME":
 				rec := dnsRecord{
-					Name: *s.Name,
+					Name: strings.TrimSuffix(*s.Name, "."),
 					Type: *s.Type,
 				}
 				if s.AliasTarget != nil {
 					rec.Alias = true
-					rec.Values = append(rec.Values, *s.AliasTarget.DNSName)
+					rec.Values = append(rec.Values, strings.TrimSuffix(*s.AliasTarget.DNSName, "."))
 				} else {
 					for _, r := range s.ResourceRecords {
 						if !strings.HasSuffix(*r.Value, "acm-validations.aws.") {
-							rec.Values = append(rec.Values, *r.Value)
+							rec.Values = append(rec.Values, strings.TrimSuffix(*r.Value, "."))
 						} else {
-							fmt.Fprintf(os.Stderr, "Skipping %v (ACM)\n", *s.Name)
+							fmt.Fprintf(os.Stderr, "Skipping %v (ACM)\n", strings.TrimSuffix(*s.Name, "."))
 						}
 					}
 				}
@@ -85,7 +85,7 @@ func getResourceRecords(r *route53.Route53, id string) {
 					recs = append(recs, rec)
 				}
 			default:
-				fmt.Fprintf(os.Stderr, "Skipping %v (%v)\n", *s.Name, *s.Type)
+				fmt.Fprintf(os.Stderr, "Skipping %v (%v)\n", strings.TrimSuffix(*s.Name, "."), *s.Type)
 			}
 		}
 		DB[id] = recs
