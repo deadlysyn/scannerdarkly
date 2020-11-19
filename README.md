@@ -8,13 +8,21 @@
 
 ## Route53 Zone Auditor
 
-Crawls records in hosted zones and checks for listening ports.
+_NOTE: This is MVP, so only generates a CSV report. JSON output TBD. Other ideas?_
 
-Since the idea is preventing DNS hijacking, only public zones are audited.
-Any A, AAAA, CNAME or ALIAS records are port scanned. NS, SOA and ACM-related
-records are ignored.
+Crawls records in hosted zones and checks for listening ports. Only public
+zones are audited. Any A, AAAA, CNAME or ALIAS records are port scanned.
+MX, NS, SOA, TXT and ACM-related CNAMEs are ignored.
 
-This is MVP, so only generates a CSV report. JSON output TBD.
+The idea is helping prevent DNS hijacking. If you have stale DNS records
+in your zones, a would-be "hacker" (e.g. a bored cracker) can potentially
+stand something up at the former address and masquerade as your domain.
+
+While you can run local scans easily with aws-vault, the ideal place is
+a pipeline or EC2 instance within AWS. This is because AWS generally
+blocks anything that looks like "scanning" -- the exception is when
+scanning your own resources. Be aware of
+[the guidelines](https://aws.amazon.com/security/penetration-testing).
 
 ## Usage
 
@@ -44,6 +52,7 @@ ZXXX...,foo.domain.dev,Alias,bar.region.elb.amazonaws.com:80
 
 - Parallel scanning
 - More scan types (HEAD, version check, etc.)
+- Scan more record types (External NS? Bogus MX?)
 - Better arg/environment parsing
 - JSON output (feed to other tools?)
 
