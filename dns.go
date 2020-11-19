@@ -38,7 +38,8 @@ func getPublicZoneIds(r *route53.Route53) ([]string, error) {
 
 		if *res.IsTruncated {
 			input = &route53.ListHostedZonesInput{
-				Marker: aws.String(*res.NextMarker),
+				MaxItems: aws.String("100"),
+				Marker:   aws.String(*res.NextMarker),
 			}
 		} else {
 			return ids, nil
@@ -92,6 +93,8 @@ func getResourceRecords(r *route53.Route53, id string) {
 
 		if *res.IsTruncated {
 			input = &route53.ListResourceRecordSetsInput{
+				HostedZoneId:    aws.String(id),
+				MaxItems:        aws.String("100"),
 				StartRecordName: res.NextRecordName,
 				StartRecordType: res.NextRecordType,
 			}
