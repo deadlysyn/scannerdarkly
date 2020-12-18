@@ -23,13 +23,16 @@ a pipeline or EC2 instance within AWS. This is because AWS generally
 blocks anything that looks like "scanning" -- the exception is when
 scanning your own resources. Be aware of
 [the guidelines](https://aws.amazon.com/security/penetration-testing).
+For Route53 zone enumeration in particular, the approach is to leverage
+APIs vs crawling public DNS infrastructure. DO NOT attempt the latter
+or you are in violation of AWS policy.
 
 ## Usage
 
 All configuration can be specified via environment:
 
-- `PORTS`: Space delimited list of TCP ports to check (default: 80 443 8080 8443)
-- `TIMEOUT`: Scanning timeout (includes DNS resolution, default: 10 seconds)
+- `PORTS`: Space delimited list of TCP ports to check (default: 80 443)
+- `TIMEOUT`: Scanning timeout (includes DNS resolution, default: 5 seconds)
 - `ZONES`: Space delimited list of hosted zone IDs to audit (default: all public zones in account)
 
 ### Example
