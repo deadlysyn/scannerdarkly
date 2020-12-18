@@ -25,9 +25,7 @@ func parseEnv() {
 	} else {
 		PORTS = []string{
 			"80",
-			"8080",
 			"443",
-			"8443",
 		}
 	}
 
@@ -36,7 +34,7 @@ func parseEnv() {
 		t, _ := strconv.Atoi(timeout)
 		TIMEOUT = time.Duration(t) * time.Second
 	} else {
-		TIMEOUT = 10 * time.Second
+		TIMEOUT = 5 * time.Second
 	}
 
 	zones := strings.TrimSpace(os.Getenv("ZONES"))
