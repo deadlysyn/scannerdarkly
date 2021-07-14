@@ -1,0 +1,5 @@
+aliasonly: true
+zones:
+  - zoneID1
+  - zoneID2
+  - zoneID3
