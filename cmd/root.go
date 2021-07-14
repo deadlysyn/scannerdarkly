@@ -17,9 +17,10 @@ type dnsRecord struct {
 }
 
 var (
-	cfgFile string
+	aliasOnly    bool
+	cfgFile      string
+	reportFormat string
 
-	// DB maps Route53 Zone IDs to slices of dnsRecords
 	DB = make(map[string][]dnsRecord)
 
 	RootCmd = &cobra.Command{
@@ -39,6 +40,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "config.yml", "config file")
+	RootCmd.PersistentFlags().StringVarP(&reportFormat, "report-format", "r", "csv", "output format")
+	RootCmd.PersistentFlags().BoolVarP(&aliasOnly, "alias-only", "a", true, "only scan alias records")
 }
 
 func initConfig() {

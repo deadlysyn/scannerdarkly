@@ -1,4 +1,5 @@
-aliasonly: true
+aliasOnly: true
+reportFormat: csv
 zones:
   - zoneID1
   - zoneID2
