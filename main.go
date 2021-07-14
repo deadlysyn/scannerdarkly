@@ -1,6 +1,6 @@
 package main
 
-import "github.com/deadlysyn/scan53/cmd"
+import "github.com/deadlysyn/scannerdarkly/cmd"
 
 func main() {
 	cmd.Execute()
