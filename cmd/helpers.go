@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -71,7 +70,7 @@ func getResourceRecords(ctx context.Context, r *route53.Client, id string) {
 
 		for _, s := range res.ResourceRecordSets {
 			switch string(s.Type) {
-			case "A", "AAAA", "CNAME":
+			case "CNAME":
 				rec := dnsRecord{
 					Name: strings.TrimSuffix(*s.Name, "."),
 					Type: string(s.Type),
@@ -84,7 +83,7 @@ func getResourceRecords(ctx context.Context, r *route53.Client, id string) {
 						if !strings.HasSuffix(*r.Value, "acm-validations.aws.") {
 							rec.Values = append(rec.Values, strings.TrimSuffix(*r.Value, "."))
 						} else {
-							fmt.Fprintf(os.Stderr, "Skipping %v (ACM)\n", strings.TrimSuffix(*s.Name, "."))
+							fmt.Printf("\tSkipping %v (ACM)\n", strings.TrimSuffix(*s.Name, "."))
 						}
 					}
 				}
@@ -92,7 +91,7 @@ func getResourceRecords(ctx context.Context, r *route53.Client, id string) {
 					recs = append(recs, rec)
 				}
 			default:
-				fmt.Fprintf(os.Stderr, "Skipping %v (%v)\n", strings.TrimSuffix(*s.Name, "."), s.Type)
+				fmt.Printf("\tSkipping %v (%v)\n", strings.TrimSuffix(*s.Name, "."), s.Type)
 			}
 		}
 		DB[id] = recs
