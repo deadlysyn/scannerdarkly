@@ -10,14 +10,14 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 )
 
-func populateDB(ctx context.Context, r *route53.Client, zones []string) {
-	for _, v := range zones {
+func populateDB(ctx context.Context, r *route53.Client, zoneIDs []string) {
+	for _, v := range zoneIDs {
 		getResourceRecords(ctx, r, v)
 	}
 }
 
-func getPublicZoneIds(ctx context.Context, r *route53.Client) ([]string, error) {
-	var zones []string
+func getPublicZoneIDs(ctx context.Context, r *route53.Client) ([]string, error) {
+	var zoneIDs []string
 	input := &route53.ListHostedZonesInput{
 		MaxItems: aws.Int32(100),
 	}
@@ -31,13 +31,12 @@ func getPublicZoneIds(ctx context.Context, r *route53.Client) ([]string, error) 
 		for _, v := range res.HostedZones {
 			// only audit public zones
 			if !v.Config.PrivateZone {
-				id := strings.Split(*v.Id, "/")[2]
-				// zone IDs should start with "Z"
-				if !strings.HasPrefix(id, "Z") {
-					log.Printf("Skipping malformed zone ID: %v", id)
+				ID := strings.Split(*v.Id, "/")[2]
+				if !strings.HasPrefix(ID, "Z") {
+					log.Printf("Skipping malformed zone ID: %v", ID)
 					continue
 				}
-				zones = append(zones, id)
+				zoneIDs = append(zoneIDs, ID)
 			}
 		}
 
@@ -47,19 +46,19 @@ func getPublicZoneIds(ctx context.Context, r *route53.Client) ([]string, error) 
 				Marker:   aws.String(*res.NextMarker),
 			}
 		} else {
-			return zones, nil
+			return zoneIDs, nil
 		}
 	}
 }
 
-func getResourceRecords(ctx context.Context, r *route53.Client, id string) {
+func getResourceRecords(ctx context.Context, r *route53.Client, ID string) {
 	var recs []dnsRecord
 	input := &route53.ListResourceRecordSetsInput{
-		HostedZoneId: aws.String(id),
+		HostedZoneId: aws.String(ID),
 		MaxItems:     aws.Int32(100),
 	}
 
-	fmt.Printf("Processing zone %v\n", id)
+	fmt.Printf("Processing zone %v\n", ID)
 
 	for {
 
@@ -68,9 +67,14 @@ func getResourceRecords(ctx context.Context, r *route53.Client, id string) {
 			log.Fatal(err)
 		}
 
+		RRtypes := "CNAME"
+		if scanArecords {
+			RRtypes = "A, AAAA, CNAME"
+		}
+
 		for _, s := range res.ResourceRecordSets {
 			switch string(s.Type) {
-			case "CNAME":
+			case RRtypes:
 				rec := dnsRecord{
 					Name: strings.TrimSuffix(*s.Name, "."),
 					Type: string(s.Type),
@@ -94,11 +98,11 @@ func getResourceRecords(ctx context.Context, r *route53.Client, id string) {
 				fmt.Printf("\tSkipping %v (%v)\n", strings.TrimSuffix(*s.Name, "."), s.Type)
 			}
 		}
-		DB[id] = recs
+		DB[ID] = recs
 
 		if res.IsTruncated {
 			input = &route53.ListResourceRecordSetsInput{
-				HostedZoneId:    aws.String(id),
+				HostedZoneId:    aws.String(ID),
 				MaxItems:        aws.Int32(100),
 				StartRecordName: res.NextRecordName,
 				StartRecordType: res.NextRecordType,

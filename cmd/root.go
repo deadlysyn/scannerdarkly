@@ -19,10 +19,10 @@ type dnsRecord struct {
 }
 
 var (
-	aliasOnly bool
-	cfgFile   string
-	format    string
-	zones     []string
+	scanArecords bool
+	cfgFile      string
+	outputFormat string
+	zoneIDs      []string
 
 	DB = make(map[string][]dnsRecord)
 
@@ -43,9 +43,9 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "config.yml", "config file")
-	RootCmd.PersistentFlags().StringVarP(&format, "format", "f", "csv", "output format")
-	RootCmd.PersistentFlags().BoolVarP(&aliasOnly, "alias-only", "a", true, "only scan alias records")
-	RootCmd.PersistentFlags().StringSliceVarP(&zones, "zone-id", "z", []string{}, "zone ids to scan")
+	RootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "csv", "output format")
+	RootCmd.PersistentFlags().BoolVarP(&scanArecords, "alias-only", "a", false, "scan A/AAAA records")
+	RootCmd.PersistentFlags().StringSliceVarP(&zoneIDs, "zone-id", "z", []string{}, "zone ids to scan")
 }
 
 func initConfig() {
@@ -77,17 +77,17 @@ func scanner(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 	r53Client := route53.NewFromConfig(cfg)
 
-	if len(zones) == 0 {
-		zones = viper.GetStringSlice("zones")
-		if len(zones) == 0 {
-			zones, err = getPublicZoneIds(ctx, r53Client)
+	if len(zoneIDs) == 0 {
+		zoneIDs = viper.GetStringSlice("zones")
+		if len(zoneIDs) == 0 {
+			zoneIDs, err = getPublicZoneIDs(ctx, r53Client)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 
-	populateDB(ctx, r53Client, zones)
+	populateDB(ctx, r53Client, zoneIDs)
 
 	// for _, v := range viper.GetStringSlice("zones") {
 	// 	result, _ := getParam(r53Client, fmt.Sprintf("%s/%s", viper.GetString("ssm.prefix"), v))
