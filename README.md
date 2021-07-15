@@ -1,5 +1,7 @@
 # Contents
 
+**NOTE: Refactor in progress!**
+
 - [Introduction](#route53-zone-auditor)
 - [Usage](#usage)
   - [Example](#example)
