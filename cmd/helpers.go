@@ -10,14 +10,31 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/route53"
 )
 
+// which record types to scan
+var RRtypes = map[string]bool{
+	"CNAME": true,
+}
+
 func populateDB(ctx context.Context, r *route53.Client, zoneIDs []string) {
+	if scanArecords {
+		RRtypes["A"] = true
+		RRtypes["AAAA"] = true
+	}
+
 	for _, v := range zoneIDs {
 		getResourceRecords(ctx, r, v)
 	}
+
+	count := 0
+	for k := range DB {
+		count = count + len(DB[k])
+	}
+	fmt.Printf("\n\nDEBUG: %v\n\n", count)
 }
 
 func getPublicZoneIDs(ctx context.Context, r *route53.Client) ([]string, error) {
 	var zoneIDs []string
+
 	input := &route53.ListHostedZonesInput{
 		MaxItems: aws.Int32(100),
 	}
@@ -53,6 +70,7 @@ func getPublicZoneIDs(ctx context.Context, r *route53.Client) ([]string, error) 
 
 func getResourceRecords(ctx context.Context, r *route53.Client, ID string) {
 	var recs []dnsRecord
+
 	input := &route53.ListResourceRecordSetsInput{
 		HostedZoneId: aws.String(ID),
 		MaxItems:     aws.Int32(100),
@@ -67,14 +85,10 @@ func getResourceRecords(ctx context.Context, r *route53.Client, ID string) {
 			log.Fatal(err)
 		}
 
-		RRtypes := "CNAME"
-		if scanArecords {
-			RRtypes = "A, AAAA, CNAME"
-		}
-
 		for _, s := range res.ResourceRecordSets {
-			switch string(s.Type) {
-			case RRtypes:
+			switch {
+			case RRtypes[string(s.Type)]:
+
 				rec := dnsRecord{
 					Name: strings.TrimSuffix(*s.Name, "."),
 					Type: string(s.Type),
