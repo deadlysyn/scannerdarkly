@@ -88,28 +88,7 @@ func scanner(cmd *cobra.Command, args []string) {
 	}
 
 	populateDB(ctx, r53Client, zoneIDs)
-
-	// for _, v := range viper.GetStringSlice("zones") {
-	// 	result, _ := getParam(r53Client, fmt.Sprintf("%s/%s", viper.GetString("ssm.prefix"), v))
-	// 	creds[v] = aws.ToString(result.Parameter.Value)
-	// }
+	// 	scan()
+	// 	reportCSV()
+	// 	// reportJSON()
 }
-
-// func initSession() {
-// 	s := session.Must(session.NewSession())
-// 	r := route53.New(s)
-
-// 	if len(ZONES) == 0 {
-// 		ids, err := getPublicZoneIds(r)
-// 		if err != nil {
-// 			log.Fatal(err)
-// 		}
-// 		populateDB(r, ids)
-// 	} else {
-// 		populateDB(r, ZONES)
-// 	}
-
-// 	scan()
-// 	reportCSV()
-// 	// reportJSON()
-// }
