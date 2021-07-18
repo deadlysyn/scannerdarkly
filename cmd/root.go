@@ -44,7 +44,7 @@ func init() {
 
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "config.yml", "config file")
 	RootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "csv", "output format")
-	RootCmd.PersistentFlags().BoolVarP(&scanArecords, "alias-only", "a", false, "scan A/AAAA records")
+	RootCmd.PersistentFlags().BoolVarP(&scanArecords, "all", "a", false, "scan A/AAAA records (in addition to CNAMEs)")
 	RootCmd.PersistentFlags().StringSliceVarP(&zoneIDs, "zone-id", "z", []string{}, "zone ids to scan")
 }
 
