@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
@@ -13,12 +15,11 @@ import (
 var (
 	cfgFile      string
 	outputFormat string
+	reportName   string
 	scanArecords bool
 	scanPorts    []string
 	scanTimeout  int
 	zoneIDs      []string
-
-	DB = make(map[string][]dnsRecord)
 
 	RootCmd = &cobra.Command{
 		Use:   "d",
@@ -40,6 +41,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "config.yml", "config file")
 	RootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "csv", "output format")
 	RootCmd.PersistentFlags().StringSliceVarP(&scanPorts, "port", "p", []string{}, "TCP ports to scan")
+	RootCmd.PersistentFlags().StringVarP(&reportName, "report-name", "r", "report", "report file name")
 	RootCmd.PersistentFlags().IntVarP(&scanTimeout, "timeout", "t", 10, "port scan timeout")
 	RootCmd.PersistentFlags().StringSliceVarP(&zoneIDs, "zone-id", "z", []string{}, "zone ids to scan")
 }
@@ -84,7 +86,13 @@ func scanner(cmd *cobra.Command, args []string) {
 	}
 
 	populateDB(ctx, r53Client, zoneIDs)
+
 	scan()
-	// 	reportCSV()
-	// reportJSON()
+
+	if strings.ToLower(outputFormat) == "csv" {
+		reportCSV()
+	} else {
+		// reportJSON()
+		fmt.Println("reportJSON")
+	}
 }

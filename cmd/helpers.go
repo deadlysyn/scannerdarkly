@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strings"
 	"time"
 
@@ -21,10 +23,12 @@ type dnsRecord struct {
 	Active []string
 }
 
-// which record types to scan
-var RRtypes = map[string]bool{
-	"CNAME": true,
-}
+var (
+	RRtypes = map[string]bool{ // which record types to scan
+		"CNAME": true,
+	}
+	DB = make(map[string][]dnsRecord)
+)
 
 func populateDB(ctx context.Context, r *route53.Client, zoneIDs []string) {
 	if scanArecords {
@@ -167,6 +171,57 @@ func scanTCP(rec *dnsRecord) {
 			defer conn.Close()
 			fmt.Println(" open.")
 			rec.Active = append(rec.Active, host)
+		}
+	}
+}
+
+func reportCSV() {
+	fmt.Printf("Writing report: %v\n", reportName)
+
+	f, err := os.Create(reportName)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	defer f.Close()
+
+	w := csv.NewWriter(f)
+	defer w.Flush()
+
+	// header
+	w.Write([]string{
+		"Zone ID",
+		"Name",
+		"Type",
+		"Values (no open ports)",
+	})
+
+	for id, recs := range DB {
+		for _, rec := range recs {
+			if len(rec.Active) != 0 {
+				continue
+				// rec.Active = append(rec.Active, "No open ports found")
+			}
+
+			t := rec.Type
+			if rec.Alias {
+				t = "Alias"
+			}
+
+			w.Write([]string{
+				id,
+				rec.Name,
+				t,
+				rec.Values[0],
+			})
+
+			for i := 1; i < len(rec.Values); i++ {
+				w.Write([]string{
+					"",
+					"",
+					"",
+					rec.Values[i],
+				})
+			}
 		}
 	}
 }
