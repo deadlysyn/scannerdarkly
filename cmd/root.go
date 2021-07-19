@@ -10,18 +10,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-type dnsRecord struct {
-	Name   string
-	Type   string
-	Alias  bool
-	Values []string
-	Active []string
-}
-
 var (
-	scanArecords bool
 	cfgFile      string
 	outputFormat string
+	scanArecords bool
+	scanPorts    []string
+	scanTimeout  int
 	zoneIDs      []string
 
 	DB = make(map[string][]dnsRecord)
@@ -42,9 +36,11 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
+	RootCmd.PersistentFlags().BoolVarP(&scanArecords, "all", "a", false, "scan A/AAAA records (in addition to CNAMEs)")
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "config.yml", "config file")
 	RootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "csv", "output format")
-	RootCmd.PersistentFlags().BoolVarP(&scanArecords, "all", "a", false, "scan A/AAAA records (in addition to CNAMEs)")
+	RootCmd.PersistentFlags().StringSliceVarP(&scanPorts, "port", "p", []string{}, "TCP ports to scan")
+	RootCmd.PersistentFlags().IntVarP(&scanTimeout, "timeout", "t", 10, "port scan timeout")
 	RootCmd.PersistentFlags().StringSliceVarP(&zoneIDs, "zone-id", "z", []string{}, "zone ids to scan")
 }
 
@@ -88,7 +84,7 @@ func scanner(cmd *cobra.Command, args []string) {
 	}
 
 	populateDB(ctx, r53Client, zoneIDs)
-	// 	scan()
+	scan()
 	// 	reportCSV()
-	// 	// reportJSON()
+	// reportJSON()
 }

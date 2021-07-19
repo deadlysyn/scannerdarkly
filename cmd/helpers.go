@@ -4,11 +4,22 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
+	"github.com/spf13/viper"
 )
+
+type dnsRecord struct {
+	Name   string
+	Type   string
+	Alias  bool
+	Values []string
+	Active []string
+}
 
 // which record types to scan
 var RRtypes = map[string]bool{
@@ -123,6 +134,39 @@ func getResourceRecords(ctx context.Context, r *route53.Client, ID string) {
 			}
 		} else {
 			break
+		}
+	}
+}
+
+func scan() {
+	for id, recs := range DB {
+		for idx := range recs {
+			scanTCP(&DB[id][idx])
+		}
+	}
+}
+
+func scanTCP(rec *dnsRecord) {
+	ports := viper.GetStringSlice("scanports")
+	timeout := (time.Duration(viper.GetInt("scantimeout")) * time.Second)
+
+	for _, v := range rec.Values {
+		for _, p := range ports {
+			var host string
+			if rec.Type == "AAAA" && !rec.Alias {
+				host = fmt.Sprintf("[%v]:%v", v, p)
+			} else {
+				host = fmt.Sprintf("%v:%v", v, p)
+			}
+			fmt.Printf("Scanning %v...", host)
+			conn, err := net.DialTimeout("tcp", host, timeout)
+			if err != nil {
+				fmt.Println(" closed.")
+				continue
+			}
+			defer conn.Close()
+			fmt.Println(" open.")
+			rec.Active = append(rec.Active, host)
 		}
 	}
 }
