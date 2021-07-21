@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strings"
 
@@ -92,7 +91,6 @@ func scanner(cmd *cobra.Command, args []string) {
 	if strings.ToLower(outputFormat) == "csv" {
 		reportCSV()
 	} else {
-		// reportJSON()
-		fmt.Println("reportJSON")
+		reportJSON()
 	}
 }

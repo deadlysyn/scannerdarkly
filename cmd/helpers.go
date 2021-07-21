@@ -44,7 +44,6 @@ func populateDB(ctx context.Context, r *route53.Client, zoneIDs []string) {
 	for k := range DB {
 		count = count + len(DB[k])
 	}
-	fmt.Printf("\n\nDEBUG: %v\n\n", count)
 }
 
 func getPublicZoneIDs(ctx context.Context, r *route53.Client) ([]string, error) {
@@ -156,11 +155,9 @@ func scanTCP(rec *dnsRecord) {
 
 	for _, v := range rec.Values {
 		for _, p := range ports {
-			var host string
+			host := fmt.Sprintf("%v:%v", v, p)
 			if rec.Type == "AAAA" && !rec.Alias {
 				host = fmt.Sprintf("[%v]:%v", v, p)
-			} else {
-				host = fmt.Sprintf("%v:%v", v, p)
 			}
 			fmt.Printf("Scanning %v...", host)
 			conn, err := net.DialTimeout("tcp", host, timeout)
@@ -171,6 +168,7 @@ func scanTCP(rec *dnsRecord) {
 			defer conn.Close()
 			fmt.Println(" open.")
 			rec.Active = append(rec.Active, host)
+			break
 		}
 	}
 }
@@ -199,7 +197,6 @@ func reportCSV() {
 		for _, rec := range recs {
 			if len(rec.Active) != 0 {
 				continue
-				// rec.Active = append(rec.Active, "No open ports found")
 			}
 
 			t := rec.Type
@@ -224,4 +221,8 @@ func reportCSV() {
 			}
 		}
 	}
+}
+
+func reportJSON() {
+	fmt.Println("reportJSON")
 }
