@@ -5,5 +5,6 @@ ports:
   - 443
   - 4443
   - 8443
-zones:
-  - Z3OSB0LGBVESH8
+#zones:
+#  - ZXXX...
+#  - ZYYY...
