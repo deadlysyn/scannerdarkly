@@ -25,8 +25,8 @@ APIs vs crawling public DNS infrastructure. The latter violates AWS policy.
 
 ## Usage
 
-Thanks to [viper](https://github.com/spf13/viper) and
-[cobra](https://github.com/spf13/cobra), configuration can be
+Thanks to [spf13/viper](https://github.com/spf13/viper) and
+[spf13/cobra](https://github.com/spf13/cobra), configuration can be
 specified as environment variables, YAML configuration or
 command line arguments.
 
