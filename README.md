@@ -2,7 +2,6 @@
 
 - [Introduction](#route53-zone-auditor)
 - [Usage](#usage)
-  - [Example](#example)
 - [Dependencies](#dependencies)
 - [References](#references)
 
