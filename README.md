@@ -94,7 +94,7 @@ ZXXX...,foo.domain.dev,Alias,bar.az-1.elb.amazonaws.com
 
 ## TODO
 
-Parallel scanning would speed things up, but look more like a DDoS.
+Parallel scanning would speed things up, but look more suspect.
 Alternate approach may be removing scanning entirely and feeding
 lists of host:ports to an external tool like nmap.
 
