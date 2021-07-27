@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"log"
-	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/route53"
@@ -12,13 +11,17 @@ import (
 )
 
 var (
-	cfgFile      string
-	outputFormat string
-	reportName   string
-	scanArecords bool
-	scanPorts    []string
-	scanTimeout  int
-	zoneIDs      []string
+	cfgFile string
+	JSONOut bool
+	name    string
+	scanAll bool
+	timeout int
+	ports   = []string{}
+	zones   = []string{}
+
+	RRtypes = map[string]bool{ // which record types to scan
+		"CNAME": true,
+	}
 
 	RootCmd = &cobra.Command{
 		Use:   "d",
@@ -36,13 +39,13 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	RootCmd.PersistentFlags().BoolVarP(&scanArecords, "all", "a", false, "scan A/AAAA records (in addition to CNAMEs)")
 	RootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "config.yml", "config file")
-	RootCmd.PersistentFlags().StringVarP(&outputFormat, "format", "f", "csv", "output format")
-	RootCmd.PersistentFlags().StringSliceVarP(&scanPorts, "port", "p", []string{}, "TCP ports to scan")
-	RootCmd.PersistentFlags().StringVarP(&reportName, "report-name", "r", "report", "report file name")
-	RootCmd.PersistentFlags().IntVarP(&scanTimeout, "timeout", "t", 10, "port scan timeout")
-	RootCmd.PersistentFlags().StringSliceVarP(&zoneIDs, "zone-id", "z", []string{}, "zone ids to scan")
+	RootCmd.PersistentFlags().BoolVarP(&JSONOut, "json", "j", false, "json output")
+	RootCmd.PersistentFlags().StringVarP(&name, "name", "n", "report", "report file name")
+	RootCmd.PersistentFlags().BoolVarP(&scanAll, "all", "a", false, "scan A/AAAA records (in addition to aliases)")
+	RootCmd.PersistentFlags().StringSliceVarP(&ports, "ports", "p", ports, "TCP ports to scan")
+	RootCmd.PersistentFlags().IntVarP(&timeout, "timeout", "t", 10, "port scan timeout")
+	RootCmd.PersistentFlags().StringSliceVarP(&zones, "zones", "z", zones, "zone ids to scan")
 }
 
 func initConfig() {
@@ -63,6 +66,13 @@ func initConfig() {
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
+
+	// scanAll = viper.Get("all").(bool)
+	if scanAll {
+		RRtypes["A"] = true
+		RRtypes["AAAA"] = true
+	}
+
 }
 
 func scanner(cmd *cobra.Command, args []string) {
@@ -74,23 +84,23 @@ func scanner(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 	r53Client := route53.NewFromConfig(cfg)
 
-	if len(zoneIDs) == 0 {
-		zoneIDs = viper.GetStringSlice("zones")
-		if len(zoneIDs) == 0 {
-			zoneIDs, err = getPublicZoneIDs(ctx, r53Client)
+	if len(zones) == 0 {
+		zones = viper.GetStringSlice("zones")
+		if len(zones) == 0 {
+			zones, err = getPublicZoneIDs(ctx, r53Client)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 
-	populateDB(ctx, r53Client, zoneIDs)
+	populateDB(ctx, r53Client, zones)
 
 	scan()
 
-	if strings.ToLower(outputFormat) == "csv" {
-		reportCSV()
-	} else {
+	if JSONOut {
 		reportJSON()
+	} else {
+		reportCSV()
 	}
 }

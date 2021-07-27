@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -24,17 +25,10 @@ type dnsRecord struct {
 }
 
 var (
-	RRtypes = map[string]bool{ // which record types to scan
-		"CNAME": true,
-	}
 	DB = make(map[string][]dnsRecord)
 )
 
 func populateDB(ctx context.Context, r *route53.Client, zoneIDs []string) {
-	if scanArecords {
-		RRtypes["A"] = true
-		RRtypes["AAAA"] = true
-	}
 
 	for _, v := range zoneIDs {
 		getResourceRecords(ctx, r, v)
@@ -150,8 +144,8 @@ func scan() {
 }
 
 func scanTCP(rec *dnsRecord) {
-	ports := viper.GetStringSlice("scanports")
-	timeout := (time.Duration(viper.GetInt("scantimeout")) * time.Second)
+	ports := viper.GetStringSlice("ports")
+	timeout := (time.Duration(viper.GetInt("timeout")) * time.Second)
 
 	for _, v := range rec.Values {
 		for _, p := range ports {
@@ -174,9 +168,9 @@ func scanTCP(rec *dnsRecord) {
 }
 
 func reportCSV() {
-	fmt.Printf("Writing report: %v\n", reportName)
+	fmt.Printf("Writing report: %v\n", name)
 
-	f, err := os.Create(reportName)
+	f, err := os.Create(name)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -224,5 +218,11 @@ func reportCSV() {
 }
 
 func reportJSON() {
-	fmt.Println("reportJSON")
+	json, err := json.MarshalIndent(DB, "", "\t")
+	if err != nil {
+		log.Fatalf(err.Error())
+
+	}
+
+	fmt.Println(string(json))
 }
