@@ -52,7 +52,7 @@ Flags:
 
 ❯ aws-vault exec dev -- ./d -r custom_report.csv
 [status output trimmed]
-Writing report: report
+Writing report: custom_report
 
 ❯ cat custom_report.csv
 Zone ID,Name,Type,Values (no open ports)
@@ -86,7 +86,7 @@ Skipping foo.domain.dev (SOA)
 Skipping _XXX.foo.domain.dev (ACM)
 Scanning bar.az-1.elb.amazonaws.com:80... open.
 
-$ cat report.csv
+$ cat report
 Zone ID,Name,Type,Results (no open ports)
 ZXXX...,foo.domain.dev,Alias,bar.az-1.elb.amazonaws.com
 ...
