@@ -17,19 +17,16 @@ import (
 )
 
 type dnsRecord struct {
-	Name   string
-	Type   string
-	Alias  bool
-	Values []string
-	Active []string
+	Name   string   `json:"name,omitempty"`
+	Type   string   `json:"type,omitempty"`
+	Alias  bool     `json:"alias,omitempty"`
+	Values []string `json:"values,omitempty"`
+	Active []string `json:"active,omitempty"`
 }
 
-var (
-	DB = make(map[string][]dnsRecord)
-)
+var DB = make(map[string][]dnsRecord)
 
 func populateDB(ctx context.Context, r *route53.Client, zoneIDs []string) {
-
 	for _, v := range zoneIDs {
 		getResourceRecords(ctx, r, v)
 	}
@@ -84,7 +81,7 @@ func getResourceRecords(ctx context.Context, r *route53.Client, ID string) {
 		MaxItems:     aws.Int32(100),
 	}
 
-	fmt.Printf("Processing zone %v\n", ID)
+	fmt.Fprintf(os.Stderr, "Processing zone %v\n", ID)
 
 	for {
 
@@ -109,7 +106,7 @@ func getResourceRecords(ctx context.Context, r *route53.Client, ID string) {
 						if !strings.HasSuffix(*r.Value, "acm-validations.aws.") {
 							rec.Values = append(rec.Values, strings.TrimSuffix(*r.Value, "."))
 						} else {
-							fmt.Printf("\tSkipping %v (ACM)\n", strings.TrimSuffix(*s.Name, "."))
+							fmt.Fprintf(os.Stderr, "\tSkipping %v (ACM)\n", strings.TrimSuffix(*s.Name, "."))
 						}
 					}
 				}
@@ -117,7 +114,7 @@ func getResourceRecords(ctx context.Context, r *route53.Client, ID string) {
 					recs = append(recs, rec)
 				}
 			default:
-				fmt.Printf("\tSkipping %v (%v)\n", strings.TrimSuffix(*s.Name, "."), s.Type)
+				fmt.Fprintf(os.Stderr, "\tSkipping %v (%v)\n", strings.TrimSuffix(*s.Name, "."), s.Type)
 			}
 		}
 		DB[ID] = recs
@@ -153,14 +150,14 @@ func scanTCP(rec *dnsRecord) {
 			if rec.Type == "AAAA" && !rec.Alias {
 				host = fmt.Sprintf("[%v]:%v", v, p)
 			}
-			fmt.Printf("Scanning %v...", host)
+			fmt.Fprintf(os.Stderr, "Scanning %v...", host)
 			conn, err := net.DialTimeout("tcp", host, timeout)
 			if err != nil {
-				fmt.Println(" closed.")
+				fmt.Fprintln(os.Stderr, " closed.")
 				continue
 			}
 			defer conn.Close()
-			fmt.Println(" open.")
+			fmt.Fprintln(os.Stderr, " open.")
 			rec.Active = append(rec.Active, host)
 			break
 		}
@@ -168,7 +165,7 @@ func scanTCP(rec *dnsRecord) {
 }
 
 func reportCSV() {
-	fmt.Printf("Writing report: %v\n", name)
+	fmt.Fprintf(os.Stderr, "Writing report: %v\n", name)
 
 	f, err := os.Create(name)
 	if err != nil {
@@ -218,11 +215,10 @@ func reportCSV() {
 }
 
 func reportJSON() {
-	json, err := json.MarshalIndent(DB, "", "\t")
+	json, err := json.MarshalIndent(DB, "", "  ")
 	if err != nil {
 		log.Fatalf(err.Error())
 
 	}
-
 	fmt.Println(string(json))
 }
