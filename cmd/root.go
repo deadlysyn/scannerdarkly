@@ -19,7 +19,8 @@ var (
 	ports   = []string{}
 	zones   = []string{}
 
-	RRtypes = map[string]bool{ // which record types to scan
+	// which record types to scan
+	RRtypes = map[string]bool{
 		"CNAME": true,
 	}
 
@@ -67,7 +68,6 @@ func initConfig() {
 		log.Fatalf("ERROR: %v", err)
 	}
 
-	// scanAll = viper.Get("all").(bool)
 	if scanAll {
 		RRtypes["A"] = true
 		RRtypes["AAAA"] = true
